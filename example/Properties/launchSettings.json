@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "WXRGenerator": {
+      "commandName": "Project",
+      "commandLineArgs": " -i \"D:\\temp\\wp\\input.csv\" -m \"D:temp\\wp\\metadata.csv\" -o \"D:\\temp\\wp\\output.xml\""
+    }
+  }
+}
