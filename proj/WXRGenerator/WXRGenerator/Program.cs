@@ -1,4 +1,6 @@
 ﻿using CsvHelper;
+using System.Globalization;
+using WXRGenerator.Model;
 
 ConsoleApp.Run<MyCommands>(args);
 
@@ -21,8 +23,44 @@ public class MyCommands : ConsoleAppBase
 	{
 		Console.WriteLine($"Reading from {inputFilePath} and {metadataFilePath}, result will be saved to {outputFilePath}");
 
-		if (File.Exists(outputFilePath))
+		if (!File.Exists(metadataFilePath))
 		{
+			Console.WriteLine($"Metadata file {metadataFilePath} does not exist");
+			return;
 		}
+		// Read metadata from metadataFilePath
+		List<Metadata> metadata;
+		metadata = readMetadataFile(metadataFilePath);
+		Console.WriteLine(string.Join(",", metadata));
+
+		Console.WriteLine();
+
+		// Read data from inputFilePath
+		List<BlogPost> blogPosts;
+		blogPosts = readBlogPostsFile(inputFilePath);
+		Console.WriteLine(string.Join(",", blogPosts));
+
+	}
+
+	private static List<Metadata> readMetadataFile(string metadataFilePath)
+	{
+		List<Metadata> metadata;
+		using (var reader = new StreamReader(metadataFilePath))
+		using (var csv = new CsvReader(reader, CultureInfo.InvariantCulture))
+		{
+			metadata = csv.GetRecords<Metadata>().ToList();
+		}
+		return metadata;
+	}
+
+	private static List<BlogPost> readBlogPostsFile(string  inputFilePath)
+	{
+		List<BlogPost> blogPosts;
+		using (var reader = new StreamReader(inputFilePath))
+		using (var csv = new CsvReader(reader, CultureInfo.InvariantCulture))
+		{
+			blogPosts = csv.GetRecords<BlogPost>().ToList();
+		}
+		return blogPosts;
 	}
 }
