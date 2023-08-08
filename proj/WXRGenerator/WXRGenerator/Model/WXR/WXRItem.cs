@@ -18,5 +18,6 @@
 		public string Status { get; set; }
 		public string PostName { get; set; }
 		public string Category { get; set; }
+		public string CategoryNice { get; set; }
 	}
 }

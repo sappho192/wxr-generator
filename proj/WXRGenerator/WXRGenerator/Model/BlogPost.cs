@@ -22,11 +22,17 @@ namespace WXRGenerator.Model
 		public string WpPostDate { get; set; }
 		[Name("category")]
 		public string Category { get; set; }
+		[Name("category_nice")]
+		public string CategoryNice { get; set; }
+		[Name("comment_status")]
+		public string CommentStatus { get; set; }
+		[Name("ping_status")]
+		public string PingStatus { get; set; }
 
 		// ToString() override
 		public override string ToString()
 		{
-			return $"Title: {Title}, Link: {Link}, PubDate: {PubDate}, DcCreator: {DcCreator}, ContentEncoded: {ContentEncoded}, WpPostId: {WpPostId}, WpPostDate: {WpPostDate}, Category: {Category}";
+			return $"Title: {Title}, Link: {Link}, PubDate: {PubDate}, DcCreator: {DcCreator}, ContentEncoded: {ContentEncoded}, WpPostId: {WpPostId}, WpPostDate: {WpPostDate}, Category: {Category}, CategoryNice: {CategoryNice}, CommentStatus: {CommentStatus}, PingStatus: {PingStatus}";
 		}
 	}
 }

@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using System.Text;
+using System.Web;
 using System.Xml;
 
 namespace WXRGenerator.Model.WXR
@@ -43,7 +44,6 @@ namespace WXRGenerator.Model.WXR
 			author.AuthorLastName = metadata.WpAuthorLastName;
 			channel.Authors = new List<WXRAuthor> { author };
 
-
 			return channel;
 		}
 
@@ -65,11 +65,12 @@ namespace WXRGenerator.Model.WXR
 				item.PostId = blogPost.WpPostId;
 				item.PostDate = blogPost.WpPostDate;
 				item.PostDateGmt = toGMTDate(blogPost.WpPostDate);
-				item.CommentStatus = "open";
-				item.PingStatus = "open";
+				item.CommentStatus = blogPost.CommentStatus;
+				item.PingStatus = blogPost.PingStatus;
 				item.Status = "publish";
 				item.PostName = generatePostName(blogPost.DcCreator, blogPost.WpPostId);
 				item.Category = blogPost.Category;
+				item.CategoryNice = blogPost.CategoryNice;
 
 				items.Add(item);
 			}
@@ -79,12 +80,12 @@ namespace WXRGenerator.Model.WXR
 
 		private string toGMTDate(string wpPostDate)
 		{
-			DateTime dateTime;
-			if (DateTime.TryParseExact(wpPostDate, "yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out dateTime))
-			{ 
+			if (DateTime.TryParseExact(wpPostDate, "yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime dateTime))
+			{
 				var modifiedDateTime = dateTime.AddHours(-int.Parse(timezone));
 				return modifiedDateTime.ToString("yyyy-MM-dd HH:mm");
-			} else
+			}
+			else
 			{
 				return wpPostDate;
 			}
@@ -182,8 +183,8 @@ namespace WXRGenerator.Model.WXR
 					xmlWriter.WriteElementString(prefix: wp, "is_sticky", null, "0");
 					xmlWriter.WriteStartElement("category");
 					xmlWriter.WriteAttributeString("domain", "category");
-					xmlWriter.WriteAttributeString("nicename", item.Category);
-					xmlWriter.WriteCData(item.Category);
+					xmlWriter.WriteAttributeString("nicename", HttpUtility.UrlEncode(item.CategoryNice, Encoding.UTF8));
+					xmlWriter.WriteCData(item.CategoryNice);
 					xmlWriter.WriteEndElement();
 				}
 				xmlWriter.WriteEndElement();
