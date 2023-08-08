@@ -31,11 +31,13 @@ namespace WXRGenerator.Model
 		public string WpAuthorFirstName { get; set; }
 		[Name("wp:author_last_name")]
 		public string WpAuthorLastName { get; set; }
+		[Name("timezone")]
+		public string Timezone { get; set; }
 
 		// ToString() override
 		public override string ToString()
 		{
-			return $"Title: {Title}, Link: {Link}, Description: {Description}, Language: {Language}, WpBaseSiteUrl: {WpBaseSiteUrl}, WpBaseBlogUrl: {WpBaseBlogUrl}, WpAuthorId: {WpAuthorId}, WpAuthorLogin: {WpAuthorLogin}, WpAuthorEmail: {WpAuthorEmail}, WpAuthorDisplayName: {WpAuthorDisplayName}, WpAuthorFirstName: {WpAuthorFirstName}, WpAuthorLastName: {WpAuthorLastName}";
+			return $"Title: {Title}, Link: {Link}, Description: {Description}, Language: {Language}, WpBaseSiteUrl: {WpBaseSiteUrl}, WpBaseBlogUrl: {WpBaseBlogUrl}, WpAuthorId: {WpAuthorId}, WpAuthorLogin: {WpAuthorLogin}, WpAuthorEmail: {WpAuthorEmail}, WpAuthorDisplayName: {WpAuthorDisplayName}, WpAuthorFirstName: {WpAuthorFirstName}, WpAuthorLastName: {WpAuthorLastName}, Timezone: {Timezone}";
 		}
 	}
 }
