@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using CsvHelper;
+using System.Globalization;
 using System.Text;
 using System.Web;
 using System.Xml;
@@ -10,104 +11,29 @@ namespace WXRGenerator.Model.WXR
 		public WXRChannel Channel { get; set; }
 		public List<WXRItem> Items { get; set; }
 		private string timezone { get; set; }
+		private string commentDirPath { get; set; }
 
 		private WXR() { }
 
-		public WXR(List<Metadata> metadata, List<BlogPost> blogPosts)
+		public WXR(List<Metadata> metadata, List<BlogPost> blogPosts, string _commentDirPath)
 		{
+			commentDirPath = _commentDirPath;
 			Channel = GenerateChannel(metadata);
 			timezone = metadata.First().Timezone;
 			Items = GenerateItems(blogPosts);
 		}
 
-		private WXRChannel GenerateChannel(List<Metadata> metadataList)
-		{
-			var channel = new WXRChannel();
-			var metadata = metadataList.First();
-
-			channel.Title = metadata.Title;
-			channel.Link = metadata.Link;
-			channel.Description = metadata.Description;
-			channel.PubDate = generatePubDate();
-			channel.Language = metadata.Language;
-			channel.Generator = "https://wordpress.org/?v=6.2.2";
-			channel.WXRVersion = "1.2";
-			channel.BaseSiteURL = metadata.WpBaseSiteUrl;
-			channel.BaseBlogURL = metadata.WpBaseBlogUrl;
-
-			var author = new WXRAuthor();
-			author.AuthorId = metadata.WpAuthorId;
-			author.AuthorLogin = metadata.WpAuthorLogin;
-			author.AuthorEmail = metadata.WpAuthorEmail;
-			author.AuthorDisplayName = metadata.WpAuthorDisplayName;
-			author.AuthorFirstName = metadata.WpAuthorFirstName;
-			author.AuthorLastName = metadata.WpAuthorLastName;
-			channel.Authors = new List<WXRAuthor> { author };
-
-			return channel;
-		}
-
-		private List<WXRItem> GenerateItems(List<BlogPost> blogPosts)
-		{
-			var items = new List<WXRItem>();
-
-			foreach (var blogPost in blogPosts)
-			{
-				var item = new WXRItem();
-				item.Title = blogPost.Title;
-				item.Link = blogPost.Link;
-				item.PubDate = blogPost.PubDate;
-				item.Creator = blogPost.DcCreator;
-				item.Guid = blogPost.Link;
-				item.Description = string.Empty;
-				item.ContentEncoded = blogPost.ContentEncoded;
-				item.ExcerptEncoded = string.Empty;
-				item.PostId = blogPost.WpPostId;
-				item.PostDate = blogPost.WpPostDate;
-				item.PostDateGmt = toGMTDate(blogPost.WpPostDate);
-				item.CommentStatus = blogPost.CommentStatus;
-				item.PingStatus = blogPost.PingStatus;
-				item.Status = "publish";
-				item.PostName = generatePostName(blogPost.DcCreator, blogPost.WpPostId);
-				item.Category = blogPost.Category;
-				item.CategoryNice = blogPost.CategoryNice;
-
-				items.Add(item);
-			}
-
-			return items;
-		}
-
-		private string toGMTDate(string wpPostDate)
-		{
-			if (DateTime.TryParseExact(wpPostDate, "yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime dateTime))
-			{
-				var modifiedDateTime = dateTime.AddHours(-int.Parse(timezone));
-				return modifiedDateTime.ToString("yyyy-MM-dd HH:mm");
-			}
-			else
-			{
-				return wpPostDate;
-			}
-		}
-
-		private string generatePubDate()
-		{
-			// Tue, 08 Aug 2023 01:55:45 +0000
-			// ddd should be English day of the week
-			return DateTime.Now.ToString("ddd, dd MMM yyyy HH:mm:ss +0000",
-				CultureInfo.CreateSpecificCulture("en-US"));
-		}
-
 		// Create a XML string represents WXR using the data from Channel and Items
-		public string GenerateWXR()
+		public void GenerateWXR(string outputFilePath)
 		{
-			XmlWriterSettings settings = new XmlWriterSettings();
-			settings.Indent = true;
-			settings.IndentChars = "\t";
-			settings.Encoding = Encoding.UTF8;
+			var settings = new XmlWriterSettings
+			{
+				Indent = true,
+				IndentChars = "\t",
+				Encoding = Encoding.UTF8
+			};
 
-			XmlWriter xmlWriter = XmlWriter.Create("WXR.xml", settings);
+			XmlWriter xmlWriter = XmlWriter.Create(outputFilePath, settings);
 
 			xmlWriter.WriteProcessingInstruction("xml", "version=\"1.0\" encoding=\"UTF-8\"");
 
@@ -182,10 +108,35 @@ namespace WXRGenerator.Model.WXR
 					xmlWriter.WriteElementString(prefix: wp, "post_password", null, null);
 					xmlWriter.WriteElementString(prefix: wp, "is_sticky", null, "0");
 					xmlWriter.WriteStartElement("category");
-					xmlWriter.WriteAttributeString("domain", "category");
-					xmlWriter.WriteAttributeString("nicename", HttpUtility.UrlEncode(item.CategoryNice, Encoding.UTF8));
-					xmlWriter.WriteCData(item.CategoryNice);
+					{
+						xmlWriter.WriteAttributeString("domain", "category");
+						xmlWriter.WriteAttributeString("nicename", HttpUtility.UrlEncode(item.CategoryNice, Encoding.UTF8));
+						xmlWriter.WriteCData(item.CategoryNice);
+					}
 					xmlWriter.WriteEndElement();
+
+					// Write comments
+					foreach (var comment in item.Comments)
+					{
+						xmlWriter.WriteStartElement(prefix: wp, "comment", null);
+						{
+							xmlWriter.WriteElementString(prefix: wp, "comment_id", null, comment.CommentId);
+							insertCDATA(xmlWriter, wp, "comment_author", comment.CommentAuthor);
+							xmlWriter.WriteElementString(prefix: wp, "comment_author_email", null, comment.CommentAuthorEmail);
+							xmlWriter.WriteElementString(prefix: wp, "comment_author_url", null, comment.CommentAuthorUrl);
+							xmlWriter.WriteElementString(prefix: wp, "comment_author_IP", null, comment.CommentAuthorIp);
+							xmlWriter.WriteElementString(prefix: wp, "comment_date", null, comment.CommentDate);
+							xmlWriter.WriteElementString(prefix: wp, "comment_date_gmt", null, comment.CommentDateGmt);
+							xmlWriter.WriteStartElement(prefix: wp, "comment_content", null);
+							xmlWriter.WriteRaw(comment.CommentContent);
+							xmlWriter.WriteEndElement();
+							xmlWriter.WriteElementString(prefix: wp, "comment_approved", null, comment.CommentApproved);
+							xmlWriter.WriteElementString(prefix: wp, "comment_type", null, comment.CommentType);
+							xmlWriter.WriteElementString(prefix: wp, "comment_parent", null, comment.CommentParent);
+							xmlWriter.WriteElementString(prefix: wp, "comment_user_id", null, comment.UserId);
+						}
+						xmlWriter.WriteEndElement();
+					}
 				}
 				xmlWriter.WriteEndElement();
 			}
@@ -194,10 +145,127 @@ namespace WXRGenerator.Model.WXR
 			xmlWriter.WriteEndElement(); // rss
 
 			xmlWriter.Flush();
-			var xmlString = xmlWriter.ToString();
 			xmlWriter.Close();
+		}
 
-			return xmlString;
+
+		private WXRChannel GenerateChannel(List<Metadata> metadataList)
+		{
+			var channel = new WXRChannel();
+			var metadata = metadataList.First();
+
+			channel.Title = metadata.Title;
+			channel.Link = metadata.Link;
+			channel.Description = metadata.Description;
+			channel.PubDate = generatePubDate();
+			channel.Language = metadata.Language;
+			channel.Generator = "https://wordpress.org/?v=6.2.2";
+			channel.WXRVersion = "1.2";
+			channel.BaseSiteURL = metadata.WpBaseSiteUrl;
+			channel.BaseBlogURL = metadata.WpBaseBlogUrl;
+
+			var author = new WXRAuthor();
+			author.AuthorId = metadata.WpAuthorId;
+			author.AuthorLogin = metadata.WpAuthorLogin;
+			author.AuthorEmail = metadata.WpAuthorEmail;
+			author.AuthorDisplayName = metadata.WpAuthorDisplayName;
+			author.AuthorFirstName = metadata.WpAuthorFirstName;
+			author.AuthorLastName = metadata.WpAuthorLastName;
+			channel.Authors = new List<WXRAuthor> { author };
+
+			return channel;
+		}
+
+		private List<WXRItem> GenerateItems(List<BlogPost> blogPosts)
+		{
+			var items = new List<WXRItem>();
+
+			foreach (var blogPost in blogPosts)
+			{
+				var item = new WXRItem();
+				item.Title = blogPost.Title;
+				item.Link = blogPost.Link;
+				item.PubDate = blogPost.PubDate;
+				item.Creator = blogPost.DcCreator;
+				item.Guid = blogPost.Link;
+				item.Description = string.Empty;
+				item.ContentEncoded = blogPost.ContentEncoded;
+				item.ExcerptEncoded = string.Empty;
+				item.PostId = blogPost.WpPostId;
+				item.PostDate = blogPost.WpPostDate;
+				item.PostDateGmt = toGMTDate(blogPost.WpPostDate);
+				item.CommentStatus = blogPost.CommentStatus;
+				item.PingStatus = blogPost.PingStatus;
+				item.Status = "publish";
+				item.PostName = generatePostName(blogPost.DcCreator, blogPost.WpPostId);
+				item.Category = blogPost.Category;
+				item.CategoryNice = blogPost.CategoryNice;
+				item.Comments = GenerateComments(blogPost.UniqueId, commentDirPath);
+
+				items.Add(item);
+			}
+
+			return items;
+		}
+
+		private List<WXRComment> GenerateComments(string uniqueId, string commentDirPath)
+		{
+			var commentFilePath = Path.Combine(commentDirPath, uniqueId + ".csv");
+			var wxrComments = new List<WXRComment>();
+
+			if (!File.Exists(commentFilePath))
+			{
+				Console.WriteLine($"Comment file not found: {commentFilePath}");
+				return wxrComments;
+			}
+
+			List<Comment> rawComments;
+			using (var reader = new StreamReader(commentFilePath))
+			using (var csv = new CsvReader(reader, CultureInfo.InvariantCulture))
+			{
+				rawComments = csv.GetRecords<Comment>().ToList();
+			}
+
+			foreach (var rawComment in rawComments)
+			{
+				var wxrComment = new WXRComment(
+					rawComment.Author,
+					rawComment.AuthorEmail,
+					rawComment.AuthorUrl,
+					rawComment.AuthorIp,
+					rawComment.Date,
+					toGMTDate(rawComment.Date),
+					rawComment.Content,
+					rawComment.Approved,
+					rawComment.Type,
+					rawComment.Parent,
+					rawComment.UserId
+				);
+
+				wxrComments.Add(wxrComment);
+			}
+			return wxrComments;
+		}
+
+		private string toGMTDate(string wpPostDate)
+		{
+			if (DateTime.TryParseExact(wpPostDate, "yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime dateTime))
+			{
+				var modifiedDateTime = dateTime.AddHours(-int.Parse(timezone));
+				return modifiedDateTime.ToString("yyyy-MM-dd HH:mm");
+			}
+			else
+			{
+				return wpPostDate;
+			}
+		}
+
+		private string generatePubDate()
+		{
+			// Tue, 08 Aug 2023 01:55:45 +0000
+			// ddd should be English day of the week
+			return DateTime.Now.ToString("ddd, dd MMM yyyy HH:mm:ss +0000",
+				CultureInfo.CreateSpecificCulture("en-US"));
 		}
 
 		private string generatePostName(string dcCreator, string postId)
@@ -205,7 +273,7 @@ namespace WXRGenerator.Model.WXR
 			return $"{dcCreator}-{postId}";
 		}
 
-		public void insertCDATA(XmlWriter xmlWriter, string prefix, string element, string text)
+		private void insertCDATA(XmlWriter xmlWriter, string prefix, string element, string text)
 		{
 			if (string.IsNullOrEmpty(prefix))
 			{
@@ -219,7 +287,7 @@ namespace WXRGenerator.Model.WXR
 			xmlWriter.WriteEndElement();
 		}
 
-		public void insertCDATA(XmlWriter xmlWriter, string element, string text)
+		private void insertCDATA(XmlWriter xmlWriter, string element, string text)
 		{
 			insertCDATA(xmlWriter, string.Empty, element, text);
 		}

@@ -19,5 +19,6 @@
 		public string PostName { get; set; }
 		public string Category { get; set; }
 		public string CategoryNice { get; set; }
+		public List<WXRComment> Comments { get; set; }
 	}
 }

@@ -10,19 +10,20 @@ public class MyCommands : ConsoleAppBase
 	[RootCommand]
 	public void RootCommand(
 		[Option("i", "Filepath of the input CSV data")] string input,
+		[Option("c", "Directory path of comments CSV data")] string comment,
 		[Option("m", "Filepath of CSV metadata")] string metadata,
 		[Option("o", "Filepath of the output XML file")] string output)
-	{// -i "C:\BIN\input.csv" -m "C:\BIN\metadata.csv" -o "C:\BIN\output.xml"
+	{// -i "C:\BIN\input.csv" -m "C:\BIN\metadata.csv" -c "C:\BIN\comments" -o "C:\BIN\output.xml"
 		var arguments = Context.Arguments;
 		Console.WriteLine($"Executing with arguments: \"{string.Join(" ", arguments)}\"");
 
 		Console.WriteLine("Welcome to WXRGenerator");
-		GenerateWXRFile(input, metadata, output);
+		GenerateWXRFile(input, comment, metadata, output);
 	}
 
-	private static void GenerateWXRFile(string inputFilePath, string metadataFilePath, string outputFilePath)
+	private static void GenerateWXRFile(string inputFilePath, string commentDirPath, string metadataFilePath, string outputFilePath)
 	{
-		Console.WriteLine($"Reading from {inputFilePath} and {metadataFilePath}, result will be saved to {outputFilePath}");
+		Console.WriteLine($"Reading from {inputFilePath}, {commentDirPath} and {metadataFilePath}, result will be saved to {outputFilePath}");
 
 		if (!File.Exists(metadataFilePath))
 		{
@@ -36,6 +37,16 @@ public class MyCommands : ConsoleAppBase
 
 		Console.WriteLine();
 
+		if (!File.Exists(inputFilePath))
+		{
+			Console.WriteLine($"Input file {inputFilePath} does not exist");
+			return;
+		}
+		if (!Directory.Exists(commentDirPath))
+		{
+			Console.WriteLine($"Comment directory {commentDirPath} does not exist. Comments data will be ignored.");
+			commentDirPath = string.Empty;
+		}
 		// Read data from inputFilePath
 		List<BlogPost> blogPosts;
 		blogPosts = readBlogPostsFile(inputFilePath);
@@ -44,14 +55,10 @@ public class MyCommands : ConsoleAppBase
 		Console.WriteLine();
 
 		// Generate WXR file
-		var wxr = new WXR(metadata, blogPosts);
-		var wxrXml = wxr.GenerateWXR();
-		Console.WriteLine(wxrXml);
-		Console.WriteLine();
-
-		// Save WXR file to outputFilePath
-		File.WriteAllText(outputFilePath, wxrXml);
+		var wxr = new WXR(metadata, blogPosts, commentDirPath);
+		wxr.GenerateWXR(outputFilePath);
 		Console.WriteLine($"WXR file saved to {outputFilePath}");
+		Console.WriteLine();
 
 		Console.WriteLine("Done");
 	}
@@ -67,7 +74,7 @@ public class MyCommands : ConsoleAppBase
 		return metadata;
 	}
 
-	private static List<BlogPost> readBlogPostsFile(string  inputFilePath)
+	private static List<BlogPost> readBlogPostsFile(string inputFilePath)
 	{
 		List<BlogPost> blogPosts;
 		using (var reader = new StreamReader(inputFilePath))

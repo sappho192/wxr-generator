@@ -5,7 +5,9 @@ namespace WXRGenerator.Model
 	[Delimiter(",")]
 	public class BlogPost
 	{
-		// title,link,pubDate,dc:creator,content:encoded,wp:post_id,wp:post_date,category
+		// uniqueId,title,link,pubDate,dc:creator,content:encoded,wp:post_id,wp:post_date,category
+		[Name("uniqueId")]
+		public string UniqueId { get; set; }
 		[Name("title")]
 		public string Title { get; set; }
 		[Name("link")]
@@ -32,7 +34,7 @@ namespace WXRGenerator.Model
 		// ToString() override
 		public override string ToString()
 		{
-			return $"Title: {Title}, Link: {Link}, PubDate: {PubDate}, DcCreator: {DcCreator}, ContentEncoded: {ContentEncoded}, WpPostId: {WpPostId}, WpPostDate: {WpPostDate}, Category: {Category}, CategoryNice: {CategoryNice}, CommentStatus: {CommentStatus}, PingStatus: {PingStatus}";
+			return $"UniqueId: {UniqueId}, Title: {Title}, Link: {Link}, PubDate: {PubDate}, DcCreator: {DcCreator}, ContentEncoded: {ContentEncoded}, WpPostId: {WpPostId}, WpPostDate: {WpPostDate}, Category: {Category}, CategoryNice: {CategoryNice}, CommentStatus: {CommentStatus}, PingStatus: {PingStatus}";
 		}
 	}
 }
