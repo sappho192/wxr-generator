@@ -4,7 +4,9 @@ namespace WXRGenerator.Model
 {
 	public class Comment
 	{
-		// author,author_email,author_url,author_IP,date,content,approved,type,parent,user_id
+		// comment_id,author,author_email,author_url,author_IP,date,content,approved,type,parent_id,user_id
+		[Name("comment_id")]
+		public string CommentId { get; set; }
 		[Name("author")]
 		public string Author { get; set; }
 		[Name("author_email")]
@@ -21,8 +23,8 @@ namespace WXRGenerator.Model
 		public string Approved { get; set; }
 		[Name("type")]
 		public string Type { get; set; }
-		[Name("parent")]
-		public string Parent { get; set; }
+		[Name("parent_id")]
+		public string ParentId { get; set; }
 		[Name("user_id")]
 		public string UserId { get; set; }
 	}

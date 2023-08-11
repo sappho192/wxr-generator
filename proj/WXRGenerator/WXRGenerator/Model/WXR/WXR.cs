@@ -229,6 +229,7 @@ namespace WXRGenerator.Model.WXR
 			foreach (var rawComment in rawComments)
 			{
 				var wxrComment = new WXRComment(
+					rawComment.CommentId,
 					rawComment.Author,
 					rawComment.AuthorEmail,
 					rawComment.AuthorUrl,
@@ -238,7 +239,7 @@ namespace WXRGenerator.Model.WXR
 					rawComment.Content,
 					rawComment.Approved,
 					rawComment.Type,
-					rawComment.Parent,
+					rawComment.ParentId,
 					rawComment.UserId
 				);
 

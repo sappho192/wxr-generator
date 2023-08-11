@@ -3,12 +3,12 @@
 	public class WXRComment
 	{
 		private WXRComment() { }
-		public WXRComment(string commentAuthor, string commentAuthorEmail, 
+		public WXRComment(string commentId, string commentAuthor, string commentAuthorEmail, 
 			string commentAuthorUrl, string commentAuthorIp, string commentDate, 
 			string commentDateGmt, string commentContent, string commentApproved, 
 			string commentType, string commentParent, string userId)
 		{
-			CommentId = (_commentId++).ToString();
+			CommentId = commentId;
 			CommentAuthor = commentAuthor;
 			CommentAuthorEmail = commentAuthorEmail;
 			CommentAuthorUrl = commentAuthorUrl;
@@ -22,7 +22,7 @@
 			UserId = userId;
 		}
 
-		private static int _commentId = 1;
+		//private static int _commentId = 1;
 		public string CommentId { get; set; }
 		/// <summary>
 		/// Use insertCDATA() or writeCData() to wrap the value in CDATA tags
